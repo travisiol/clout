@@ -1,0 +1,474 @@
+@import "tailwindcss";
+
+/*
+ * CLOUT.CAPITAL — trade the traders.
+ *
+ * The whole surface is a bright sky: an off-white blue page, white glass
+ * panels floating on it, and one saturated blue for anything you can act on.
+ * Nothing here is a flat card — every raised element is a pane of glass with
+ * a lit top edge (inset white hairline), a cool shadow, and a highlight arc
+ * clipped to its upper half. That arc is what makes a button read as blown
+ * glass instead of a rectangle, so it lives on ::after with a 40% bottom
+ * radius rather than in a gradient.
+ *
+ * Green and red are reserved for money moving: PnL, 24h change, buy, sell.
+ * They never decorate. Blue is the only accent, and it means "you can press
+ * this" — which is why an active filter chip is the same blue as the primary
+ * button, and an inactive one is glass.
+ */
+
+@theme {
+  --font-sans:
+    var(--font-inter), Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Arial, Helvetica, sans-serif;
+  --font-display:
+    var(--font-inter-tight), var(--font-inter), Inter, "Arial Black", Arial,
+    sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+
+  /* Surfaces, coolest to warmest white. */
+  --color-page: #eef7fe;
+  --color-surface: #fcfdfe;
+  --color-pearl: #f6faff;
+  --color-first-row: #ecf6fe;
+  --color-first-row-border: #bfdeff;
+  --color-rank-neutral: #eff4fa;
+  --color-track: #d9e6f4;
+  --color-border: #cadff8;
+  --color-hairline: #d9e6f4;
+
+  /* Type. Ink is near-navy, never black — black on a sky reads as a hole. */
+  --color-ink: #07133c;
+  --color-ink-soft: #10224a;
+  --color-secondary: #42557a;
+  --color-muted: #8190a9;
+  --color-disabled-text: #8b9ab1;
+
+  /* The one accent. */
+  --color-blue: #0875f9;
+  --color-blue-deep: #0068ea;
+  --color-blue-text: #0767f8;
+  --color-blue-soft: #d9ebff;
+  --color-lavender: #c9b6fb;
+
+  /* Money. */
+  --color-positive: #087136;
+  --color-negative: #d94355;
+  --color-warning: #8a5a00;
+
+  --color-bg-secondary: #eff4fa;
+  --color-bg-tertiary: #d9e6f4;
+  --color-text-primary: #07133c;
+  --color-text-secondary: #42557a;
+  --color-text-tertiary: #8190a9;
+  --color-accent-primary: #0875f9;
+  --color-accent-primary-transparent: rgba(8, 117, 249, 0.12);
+
+  --radius-chip: 4px;
+
+  --shadow-panel: 0 2px 8px rgba(32, 89, 158, 0.06),
+    0 12px 32px rgba(32, 89, 158, 0.1);
+  --shadow-bubble: 0 10px 20px rgba(28, 101, 201, 0.15);
+  --shadow-caption: inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 4px 10px rgba(69, 125, 189, 0.09);
+  --shadow-focus: 0 0 0 3px rgba(0, 102, 230, 0.28);
+
+  --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* One extra stop between lg and xl: the market grid needs three columns
+     before the sidebar-width breakpoints kick in. */
+  --breakpoint-desk: 75rem;
+}
+
+:root {
+  --page-max: 1672px;
+
+  /* Loaded by the <link> in the root layout; named here so the @theme font
+     stacks above resolve whether or not the webfonts ever arrive. */
+  --font-inter: "Inter";
+  --font-inter-tight: "Inter Tight";
+  --font-balloon: "Baloo 2";
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-page);
+  /* The page itself is a faint vertical sky wash; the cloud photograph is
+     only ever used inside panels, never as a full-page background. */
+  background-image: linear-gradient(
+    180deg,
+    #edf7ff 0%,
+    #f4faff 58%,
+    #f0f8ff 100%
+  );
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  color-scheme: light;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+/* Tabular figures wherever a number can change under the reader. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+dialog::backdrop {
+  background: rgba(7, 19, 60, 0.4);
+}
+
+/* ---------------------------------------------------------------------
+ * Glass
+ *
+ * These sit outside @layer on purpose: they are components, and they must
+ * win over the utilities that size them. The shared ::after is the blown
+ * highlight — top half only, rounded off at the bottom so the light pools
+ * the way it does on a bubble.
+ * ------------------------------------------------------------------- */
+
+.btn-glass,
+.btn-primary,
+.segment-active {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  /* Only the standard property: writing the -webkit- alias next to it makes
+     the minifier merge the pair and keep the prefixed one, which silently
+     removes the blur in every browser that wants the standard name. */
+  backdrop-filter: blur(14px) saturate(170%);
+  transition:
+    filter 0.14s,
+    background-color 0.14s,
+    box-shadow 0.14s,
+    transform 0.14s;
+}
+
+.btn-glass::after,
+.btn-primary::after,
+.segment-active::after {
+  content: "";
+  position: absolute;
+  inset: 1px 1px auto;
+  height: 50%;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: inherit;
+  border-bottom-left-radius: 40%;
+  border-bottom-right-radius: 40%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.58),
+    rgba(255, 255, 255, 0.06)
+  );
+}
+
+.btn-glass {
+  color: var(--color-ink-soft);
+  background-color: rgba(255, 255, 255, 0.42);
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.55),
+    rgba(236, 246, 255, 0.35)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(120, 170, 230, 0.18),
+    0 0 0 1px rgba(150, 190, 240, 0.35),
+    0 4px 12px rgba(28, 101, 201, 0.1);
+}
+
+.btn-glass:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.62);
+}
+
+.btn-glass:active:not(:disabled) {
+  transform: translateY(0.5px);
+}
+
+.btn-glass:disabled {
+  color: var(--color-disabled-text);
+  background-color: rgba(243, 247, 251, 0.6);
+  background-image: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 0 0 1px rgba(200, 215, 235, 0.5);
+}
+
+.btn-primary {
+  color: #fff;
+  background-color: rgba(8, 117, 249, 0.82);
+  background-image: linear-gradient(
+    180deg,
+    rgba(90, 170, 255, 0.85) 0%,
+    rgba(8, 117, 249, 0.85) 55%,
+    rgba(0, 96, 220, 0.9) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    inset 0 -2px 6px rgba(0, 60, 160, 0.28),
+    0 0 0 1px rgba(0, 96, 220, 0.25),
+    0 6px 16px rgba(3, 101, 227, 0.28);
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.06) saturate(1.05);
+}
+
+.btn-primary:active:not(:disabled) {
+  filter: brightness(0.96);
+  transform: translateY(0.5px);
+}
+
+.btn-primary:disabled {
+  color: var(--color-disabled-text);
+  background-color: rgba(243, 247, 251, 0.7);
+  background-image: none;
+  border-color: rgba(218, 228, 241, 0.9);
+  box-shadow: none;
+}
+
+.btn-buy,
+.btn-sell {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(14px) saturate(170%);
+}
+
+.btn-buy::after,
+.btn-sell::after {
+  content: "";
+  position: absolute;
+  inset: 1px 1px auto;
+  height: 50%;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: inherit;
+  border-bottom-left-radius: 40%;
+  border-bottom-right-radius: 40%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.55),
+    rgba(255, 255, 255, 0.06)
+  );
+}
+
+.btn-buy {
+  background-color: rgba(16, 156, 72, 0.85);
+  background-image: linear-gradient(
+    180deg,
+    rgba(74, 214, 128, 0.85) 0%,
+    rgba(16, 156, 72, 0.88) 55%,
+    rgba(8, 120, 54, 0.92) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    inset 0 -2px 6px rgba(0, 80, 30, 0.28),
+    0 0 0 1px rgba(8, 120, 54, 0.25),
+    0 6px 16px rgba(10, 140, 60, 0.28);
+}
+
+.btn-sell {
+  background-color: rgba(228, 81, 97, 0.85);
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 138, 150, 0.85) 0%,
+    rgba(228, 81, 97, 0.88) 55%,
+    rgba(200, 52, 70, 0.92) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    inset 0 -2px 6px rgba(120, 10, 30, 0.28),
+    0 0 0 1px rgba(200, 52, 70, 0.25),
+    0 6px 16px rgba(228, 81, 97, 0.28);
+}
+
+.btn-buy:hover:not(:disabled),
+.btn-sell:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.btn-buy:disabled,
+.btn-sell:disabled {
+  color: var(--color-disabled-text);
+  background-color: rgba(243, 247, 251, 0.7);
+  background-image: none;
+  border-color: rgba(218, 228, 241, 0.9);
+  box-shadow: none;
+}
+
+.segment-active {
+  color: var(--color-blue-text);
+  background-color: rgba(217, 235, 255, 0.85);
+  background-image: linear-gradient(
+    180deg,
+    rgba(232, 243, 255, 0.95),
+    rgba(197, 223, 255, 0.85)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 2px 6px rgba(28, 101, 201, 0.12);
+}
+
+.glass-field {
+  background-color: rgba(255, 255, 255, 0.5);
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.6),
+    rgba(240, 248, 255, 0.4)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 0 0 1px rgba(150, 190, 240, 0.35),
+    0 4px 12px rgba(28, 101, 201, 0.08);
+  backdrop-filter: blur(14px) saturate(170%);
+}
+
+.glass-caption {
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.94),
+    rgba(237, 247, 255, 0.91)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  box-shadow: var(--shadow-caption);
+}
+
+@supports (backdrop-filter: blur(8px)) {
+  .glass-caption {
+    backdrop-filter: blur(8px);
+  }
+}
+
+/* The hero bubbles. Three layers: the body (radial glass), a conic rim that
+   only survives inside an 8px ring mask, and a specular pass on top. */
+.glass-bubble {
+  position: relative;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle at 32% 26%,
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(255, 255, 255, 0.35) 28%,
+    rgba(255, 255, 255, 0.08) 48%,
+    rgba(157, 230, 252, 0.28) 78%,
+    rgba(201, 182, 251, 0.42) 100%
+  );
+  box-shadow: var(--shadow-bubble);
+}
+
+.glass-bubble::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  pointer-events: none;
+  background: conic-gradient(
+    from 200deg,
+    rgba(255, 255, 255, 0.98),
+    rgba(157, 230, 252, 0.85) 18%,
+    rgba(201, 182, 251, 0.7) 36%,
+    rgba(255, 255, 255, 0.9) 52%,
+    rgba(221, 243, 255, 0.85) 70%,
+    rgba(255, 210, 240, 0.55) 84%,
+    rgba(255, 255, 255, 0.98)
+  );
+  -webkit-mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 9px),
+    #000 calc(100% - 8px)
+  );
+  mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 9px),
+    #000 calc(100% - 8px)
+  );
+}
+
+.glass-bubble::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      34% 22% at 30% 16%,
+      rgba(255, 255, 255, 0.9),
+      rgba(255, 255, 255, 0) 100%
+    ),
+    radial-gradient(
+      60% 26% at 50% 96%,
+      rgba(157, 230, 252, 0.35),
+      rgba(157, 230, 252, 0) 100%
+    ),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 45%);
+}
+
+.glass-bubble > img,
+.glass-bubble > span {
+  position: absolute;
+  border-radius: 9999px;
+  object-fit: cover;
+}
+
+/* Empty bubbles drifting behind the hero. */
+.glass-orb {
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle at 32% 28%,
+    rgba(255, 255, 255, 0.95),
+    rgba(255, 255, 255, 0.3) 30%,
+    rgba(255, 255, 255, 0.04) 55%,
+    rgba(157, 230, 252, 0.35) 85%,
+    rgba(201, 182, 251, 0.5) 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.8),
+    0 6px 14px rgba(28, 101, 201, 0.14);
+}
+
+/* The wordmark renderer swaps its canvas in via this attribute rather than
+   an imperative style write, which React would clobber on the next render. */
+.balloon-swap > .balloon-img {
+  opacity: 0;
+}
+
+.balloon-swap[data-ready="1"] > .balloon-img {
+  opacity: 1;
+}
+
+.balloon-swap[data-ready="1"] > .balloon-fallback {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
