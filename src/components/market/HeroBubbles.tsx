@@ -12,8 +12,8 @@ import { formatSignedUsd } from "@/lib/format";
  * The layout is fixed at 730×336 and scaled to fit, rather than reflowed —
  * these three bubbles are one composition (the middle one is larger and rides
  * higher, the outer two sit level) and rebuilding that with flexbox at each
- * breakpoint would lose the arrangement that makes it read as a podium. A
- * ResizeObserver keeps the scale at exactly the container's width so it never
+ * breakpoint would lose the arrangement that makes it read as a podium. It is
+ * measured against its container and scaled to exactly that width, so it never
  * overflows and never leaves a gap.
  */
 
@@ -42,19 +42,42 @@ export function HeroBubbles({
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
-    const observer = new ResizeObserver(([entry]) => {
-      const width = entry.contentRect.width;
-      setScale(Math.min(1, width / STAGE_W));
-    });
+
+    // Measured three ways on purpose. The first measurement runs immediately
+    // rather than waiting for the observer's first callback, so the stage is
+    // never left at scale 1 for a frame; the window listener is there for
+    // environments where ResizeObserver does not fire at all (embedded
+    // previews and headless surfaces both do this); the observer proper
+    // catches the case the other two miss, a container that changes width
+    // without the window changing.
+    const measure = () => {
+      const width = host.getBoundingClientRect().width;
+      if (width > 0) setScale(Math.min(1, width / STAGE_W));
+    };
+    measure();
+
+    const observer = new ResizeObserver(measure);
     observer.observe(host);
-    return () => observer.disconnect();
+    window.addEventListener("resize", measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+    };
   }, []);
 
   const top3 = ORDER.map((i) => traders[i]).filter(Boolean);
   if (top3.length === 0) return <div style={{ height: STAGE_H }} />;
 
   return (
-    <div ref={hostRef} className="relative" style={{ height: STAGE_H * scale }}>
+    // `overflow: clip` rather than hidden: it never creates a scrollport, so an
+    // unscaled stage can never give the page a horizontal scrollbar, and the
+    // clip margin still lets the two loose orbs bleed past the column edge the
+    // way they do in the composition.
+    <div
+      ref={hostRef}
+      className="relative [overflow-clip-margin:96px] [overflow:clip]"
+      style={{ height: STAGE_H * scale }}
+    >
       <div
         style={{
           width: STAGE_W,
